@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Navigate, Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiHome, FiCalendar, FiBox, FiLogOut, FiSun, FiMoon } from 'react-icons/fi';
+import { FiHome, FiCalendar, FiBox, FiLogOut, FiSun, FiMoon, FiLayers } from 'react-icons/fi';
 import { Button } from "@/components/ui/button";
 
 export default function AppLayout() {
@@ -21,9 +21,11 @@ export default function AppLayout() {
     return <Navigate to="/login" replace />;
   }
 
+  // Added Resources to the navigation array
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: <FiHome /> },
     { name: 'Events', path: '/events', icon: <FiCalendar /> },
+    { name: 'Resources', path: '/resources', icon: <FiLayers /> }, 
     { name: 'Allocations', path: '/allocations', icon: <FiBox /> },
   ];
 

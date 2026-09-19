@@ -4,6 +4,7 @@ import { FiSearch, FiPlus, FiMapPin, FiClock } from 'react-icons/fi';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { StaggerContainer } from '../components/animations/StaggerContainer';
 import { PageTransition } from '../components/animations/PageTransition';
 import api from '../lib/axios';
@@ -13,6 +14,17 @@ export default function Events() {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  // Modal and Form State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [newEvent, setNewEvent] = useState({
+    name: '',
+    description: '',
+    date: '',
+    time: '',
+    venue: ''
+  });
 
   const fetchEvents = async () => {
     try {
@@ -27,9 +39,24 @@ export default function Events() {
   };
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchEvents();
   }, []);
+
+  const handleCreateEvent = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      await api.post('/events', newEvent);
+      setIsModalOpen(false); // Close the modal on success
+      setNewEvent({ name: '', description: '', date: '', time: '', venue: '' }); // Reset form
+      fetchEvents(); // Refresh the grid with the new event
+    } catch (error) {
+      console.error('Error creating event:', error);
+      alert(error.response?.data?.message || 'Failed to create event. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const filteredEvents = events.filter(event => 
     event.name?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -43,7 +70,10 @@ export default function Events() {
             <h1 className="text-3xl font-bold tracking-tight">Event Management</h1>
             <p className="text-muted-foreground">Create and manage your campus events.</p>
           </div>
-          <Button className="shrink-0 bg-primary hover:bg-primary/90 text-white shadow-md">
+          <Button 
+            onClick={() => setIsModalOpen(true)}
+            className="shrink-0 bg-primary hover:bg-primary/90 text-white shadow-md"
+          >
             <FiPlus className="mr-2" /> Create Event
           </Button>
         </div>
@@ -93,6 +123,72 @@ export default function Events() {
             </div>
           </StaggerContainer>
         )}
+
+        {/* Create Event Modal */}
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Create New Event</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleCreateEvent} className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Event Name</label>
+                <Input 
+                  required 
+                  value={newEvent.name}
+                  onChange={(e) => setNewEvent({...newEvent, name: e.target.value})}
+                  placeholder="e.g. Tech Symposium 2026"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Description</label>
+                <Input 
+                  required 
+                  value={newEvent.description}
+                  onChange={(e) => setNewEvent({...newEvent, description: e.target.value})}
+                  placeholder="Brief details about the event"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Date</label>
+                  <Input 
+                    required 
+                    type="date"
+                    value={newEvent.date}
+                    onChange={(e) => setNewEvent({...newEvent, date: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Time</label>
+                  <Input 
+                    required 
+                    type="time"
+                    value={newEvent.time}
+                    onChange={(e) => setNewEvent({...newEvent, time: e.target.value})}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Venue</label>
+                <Input 
+                  required 
+                  value={newEvent.venue}
+                  onChange={(e) => setNewEvent({...newEvent, venue: e.target.value})}
+                  placeholder="e.g. Main Auditorium"
+                />
+              </div>
+              <DialogFooter className="mt-6">
+                <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting} className="bg-primary text-white">
+                  {isSubmitting ? 'Creating...' : 'Create Event'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </PageTransition>
   );

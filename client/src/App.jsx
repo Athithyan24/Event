@@ -3,6 +3,7 @@ import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Events from './pages/Events';
+import Resources from './pages/Resources';
 import Allocations from './pages/Allocations';
 import AppLayout from './components/layout/AppLayout';
 
@@ -17,6 +18,7 @@ function App() {
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/events" element={<Events />} />
+          <Route path="/resources" element={<Resources />} />
           <Route path="/allocations" element={<Allocations />} />
         </Route>
         

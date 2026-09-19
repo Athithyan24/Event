@@ -1,21 +1,55 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiPlus, FiBox, FiCheckCircle, FiAlertTriangle, FiTrash2, FiEdit2 } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiEdit2 } from 'react-icons/fi';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { PageTransition } from '../components/animations/PageTransition';
-
-const initialResources = [
-  { id: 1, name: 'Main Auditorium', category: 'Venue', total: 1, available: 0, status: 'Allocated' },
-  { id: 2, name: 'Seminar Hall A', category: 'Venue', total: 2, available: 1, status: 'Available' },
-  { id: 3, name: '4K Laser Projector', category: 'Equipment', total: 5, available: 3, status: 'Available' },
-  { id: 4, name: 'PA Sound System', category: 'Equipment', total: 3, available: 0, status: 'Maintenance' },
-  { id: 5, name: 'Student Volunteers', category: 'Personnel', total: 50, available: 32, status: 'Available' },
-];
+import api from '../lib/axios';
 
 export default function Resources() {
-  const [resources, setResources] = useState(initialResources);
+  const [resources, setResources] = useState([]);
+  
+  // Modal & Form State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [newResource, setNewResource] = useState({
+    name: '',
+    category: 'Venue',
+    totalQuantity: 1,
+    status: 'Available'
+  });
+
+  const fetchResources = async () => {
+    try {
+      const response = await api.get('/resources');
+      setResources(response.data);
+    } catch (error) {
+      console.error('Error fetching resources:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchResources();
+  }, []);
+
+  const handleCreateResource = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      await api.post('/resources', newResource);
+      setIsModalOpen(false);
+      setNewResource({ name: '', category: 'Venue', totalQuantity: 1, status: 'Available' });
+      fetchResources(); // Refresh grid
+    } catch (error) {
+      console.error('Error creating resource:', error);
+      alert('Failed to create resource.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <PageTransition>
@@ -25,7 +59,10 @@ export default function Resources() {
             <h1 className="text-3xl font-bold tracking-tight">Resource Inventory</h1>
             <p className="text-muted-foreground">Monitor and manage equipment, venues, and personnel.</p>
           </div>
-          <Button className="shrink-0 bg-primary hover:bg-primary/90 text-white shadow-md">
+          <Button 
+            onClick={() => setIsModalOpen(true)}
+            className="shrink-0 bg-primary hover:bg-primary/90 text-white shadow-md"
+          >
             <FiPlus className="mr-2" /> Add New Resource
           </Button>
         </div>
@@ -33,7 +70,7 @@ export default function Resources() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {resources.map((resource, index) => (
             <motion.div
-              key={resource.id}
+              key={resource._id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.08 }}
@@ -49,15 +86,15 @@ export default function Resources() {
                     </div>
                     <Badge variant={
                       resource.status === 'Available' ? 'default' :
-                      resource.status === 'Allocated' ? 'secondary' : 'destructive'
+                      resource.status === 'Maintenance' ? 'secondary' : 'destructive'
                     }>
                       {resource.status}
                     </Badge>
                   </div>
 
                   <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800 text-sm">
-                    <span className="text-gray-500">Available Quantity</span>
-                    <span className="font-semibold text-base">{resource.available} / {resource.total}</span>
+                    <span className="text-gray-500">Total Quantity</span>
+                    <span className="font-semibold text-base">{resource.totalQuantity} Units</span>
                   </div>
 
                   <div className="flex justify-end gap-2 pt-2">
@@ -73,6 +110,73 @@ export default function Resources() {
             </motion.div>
           ))}
         </div>
+
+        {/* Add Resource Modal */}
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Add New Resource</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleCreateResource} className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Resource Name</label>
+                <Input 
+                  required 
+                  value={newResource.name}
+                  onChange={(e) => setNewResource({...newResource, name: e.target.value})}
+                  placeholder="e.g. 4K Projector"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Category</label>
+                <select 
+                  className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  value={newResource.category}
+                  onChange={(e) => setNewResource({...newResource, category: e.target.value})}
+                >
+                  <option value="Venue" className="bg-background text-foreground">Venue</option>
+                  <option value="Equipment" className="bg-background text-foreground">Equipment</option>
+                  <option value="Personnel" className="bg-background text-foreground">Personnel</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Quantity</label>
+                  <Input 
+                    required 
+                    type="number"
+                    min="1"
+                    value={newResource.totalQuantity}
+                    onChange={(e) => setNewResource({...newResource, totalQuantity: parseInt(e.target.value) || 1})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Status</label>
+                  <select 
+                    className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    value={newResource.status}
+                    onChange={(e) => setNewResource({...newResource, status: e.target.value})}
+                  >
+                    <option value="Available" className="bg-background text-foreground">Available</option>
+                    <option value="Maintenance" className="bg-background text-foreground">Maintenance</option>
+                    <option value="Depleted" className="bg-background text-foreground">Depleted</option>
+                  </select>
+                </div>
+              </div>
+              
+              <DialogFooter className="mt-6">
+                <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting} className="bg-primary text-white">
+                  {isSubmitting ? 'Adding...' : 'Add Resource'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </PageTransition>
   );
