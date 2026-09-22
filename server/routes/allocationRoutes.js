@@ -1,13 +1,16 @@
 const express = require('express');
-// Import both functions from the controller
-const { allocateResource, getAllocations } = require('../controllers/allocationController');
-const authMiddleware = require('../middleware/authMiddleware');
 const router = express.Router();
+const { 
+  getAllocations, 
+  allocateResource, 
+  returnAllocation,
+  deleteAllocation 
+} = require('../controllers/allocationController');
+const authMiddleware = require('../middleware/authMiddleware');
 
-// Add the GET route to resolve the 404
 router.get('/', authMiddleware, getAllocations);
-
-// Your existing POST route
 router.post('/', authMiddleware, allocateResource);
+router.patch('/:id/return', authMiddleware, returnAllocation);
+router.delete('/:id', authMiddleware, deleteAllocation);
 
 module.exports = router;

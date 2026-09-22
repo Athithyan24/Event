@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { PageTransition } from '../components/animations/PageTransition';
+import { FiCornerDownLeft } from 'react-icons/fi';
 import api from '../lib/axios';
 
 export default function Allocations() {
@@ -12,12 +13,10 @@ export default function Allocations() {
   const [resources, setResources] = useState([]);
   const [events, setEvents] = useState([]);
   
-  // Notification and Modal State
   const [notification, setNotification] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Form State
   const [newAllocation, setNewAllocation] = useState({
     eventId: '',
     resourceId: '',
@@ -33,7 +32,7 @@ export default function Allocations() {
       const [eventsRes, resourcesRes, allocationsRes] = await Promise.all([
         api.get('/events'),
         api.get('/resources'),
-        api.get('/allocations').catch(() => ({ data: [] })) // Fallback if route isn't ready
+        api.get('/allocations').catch(() => ({ data: [] }))
       ]);
       setEvents(eventsRes.data);
       setResources(resourcesRes.data);
@@ -55,24 +54,38 @@ export default function Allocations() {
       setNewAllocation({ eventId: '', resourceId: '', quantityAllocated: 1 }); 
       loadInitialData(); 
     } catch (error) {
-      const msg = error.response?.data?.message || 'Allocation failed. Conflict detected.';
+      const msg = error.response?.data?.message || 'Allocation failed.';
       setNotification({ type: 'error', message: msg });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Helper functions to map IDs to Names in case the backend doesn't populate them
-  const getEventName = (id) => {
-    if (typeof id === 'object') return id.name; // If backend populated the object
-    const event = events.find(e => e._id === id);
-    return event ? event.name : 'Unknown Event';
+  const handleReturn = async (id) => {
+    if (!window.confirm("Are you sure you want to return this resource?")) return;
+    
+    try {
+      await api.patch(`/allocations/${id}/return`);
+      setNotification({ type: 'success', message: 'Resource returned successfully.' });
+      loadInitialData();
+    } catch (err) {
+      console.error("Failed to return allocation:", err);
+      setNotification({ type: 'error', message: err.response?.data?.message || 'Failed to return resource.' });
+    }
   };
 
-  const getResourceName = (id) => {
-    if (typeof id === 'object') return id.name;
-    const resource = resources.find(r => r._id === id);
-    return resource ? resource.name : 'Unknown Resource';
+  const getEventName = (eventId) => {
+    if (!eventId) return 'Unknown Event';
+    if (typeof eventId === 'object') return eventId.name || 'Unnamed Event';
+    const match = events.find(e => e._id === eventId);
+    return match ? match.name : 'Unknown Event';
+  };
+
+  const getResourceName = (resourceId) => {
+    if (!resourceId) return 'Unknown Resource';
+    if (typeof resourceId === 'object') return resourceId.name || 'Unnamed Resource';
+    const match = resources.find(r => (r._id || r.id) === resourceId);
+    return match ? match.name : 'Unknown Resource';
   };
 
   return (
@@ -81,7 +94,7 @@ export default function Allocations() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Resource Allocation</h1>
-            <p className="text-muted-foreground">Manage active resource assignments for your events.</p>
+            <p className="text-muted-foreground">Manage active assignments and process returns.</p>
           </div>
           <Button onClick={() => setIsModalOpen(true)} className="bg-primary hover:bg-primary/90 text-white">
             + Assign Resource
@@ -102,25 +115,40 @@ export default function Allocations() {
               <TableRow>
                 <TableHead>Event</TableHead>
                 <TableHead>Resource</TableHead>
-                <TableHead>Quantity Allocated</TableHead>
-                <TableHead className="text-right">Status</TableHead>
+                <TableHead>Quantity</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {allocations.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-gray-500 py-6">
-                    No active allocations found.
+                  <TableCell colSpan={5} className="text-center text-gray-500 py-6">
+                    No allocations found.
                   </TableCell>
                 </TableRow>
               ) : (
                 allocations.map((alloc) => (
-                  <TableRow key={alloc._id}>
+                  <TableRow key={alloc._id} className={alloc.status === 'Returned' ? 'opacity-60' : ''}>
                     <TableCell className="font-semibold">{getEventName(alloc.eventId)}</TableCell>
                     <TableCell>{getResourceName(alloc.resourceId)}</TableCell>
                     <TableCell>{alloc.quantityAllocated} units</TableCell>
+                    <TableCell>
+                      <Badge variant={alloc.status === 'Returned' ? 'secondary' : 'default'}>
+                        {alloc.status || 'Confirmed'}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="text-right">
-                      <Badge variant="default">Active</Badge>
+                      {alloc.status !== 'Returned' && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleReturn(alloc._id)}
+                          className="text-gray-500 hover:text-indigo-500 font-medium flex items-center gap-2 ml-auto"
+                        >
+                          <FiCornerDownLeft size={16} /> Return
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
@@ -162,13 +190,9 @@ export default function Allocations() {
                   onChange={(e) => setNewAllocation({...newAllocation, resourceId: e.target.value})}
                 >
                   <option value="" disabled>-- Choose a Resource --</option>
-                  {resources.map((res) => (
-                    <option 
-                      key={res._id || res.id} 
-                      value={res._id || res.id} 
-                      className="bg-background text-foreground"
-                    >
-                      {res.name} (Total: {res.totalQuantity ?? 1})
+                  {resources.filter(r => r.status !== 'Maintenance' && r.status !== 'Depleted').map((res) => (
+                    <option key={res._id || res.id} value={res._id || res.id} className="bg-background text-foreground">
+                      {res.name} (Capacity: {res.totalQuantity ?? 1})
                     </option>
                   ))}
                 </select>
@@ -181,7 +205,10 @@ export default function Allocations() {
                   type="number"
                   min="1"
                   value={newAllocation.quantityAllocated}
-                  onChange={(e) => setNewAllocation({...newAllocation, quantityAllocated: parseInt(e.target.value) || 1})}
+                  onChange={(e) => setNewAllocation({
+                    ...newAllocation, 
+                    quantityAllocated: parseInt(e.target.value) || 1
+                  })}
                 />
               </div>
 

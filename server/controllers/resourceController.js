@@ -18,3 +18,23 @@ exports.createResource = async (req, res) => {
     res.status(500).json({ message: 'Error creating resource', error: error.message });
   }
 };
+
+exports.updateResource = async (req, res) => {
+  try {
+    const updatedResource = await Resource.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!updatedResource) return res.status(404).json({ message: 'Resource not found' });
+    res.json(updatedResource);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.deleteResource = async (req, res) => {
+  try {
+    const deletedResource = await Resource.findByIdAndDelete(req.params.id);
+    if (!deletedResource) return res.status(404).json({ message: 'Resource not found' });
+    res.json({ message: 'Resource deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

@@ -16,12 +16,14 @@ const authRoutes = require('./routes/authRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const allocationRoutes = require('./routes/allocationRoutes');
 const resourceRoutes = require('./routes/resourceRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 
 // API Endpoint Setup
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/allocations', allocationRoutes);
 app.use('/api/resources', resourceRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // MongoDB Connection
 const PORT = process.env.PORT || 5000;

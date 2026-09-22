@@ -1,42 +1,134 @@
+const mongoose = require('mongoose');
 const Allocation = require('../models/Allocation');
 const Resource = require('../models/Resource');
+const Event = require('../models/Event');
 
-// 1. ADD THIS FUNCTION to handle GET /api/allocations
 exports.getAllocations = async (req, res) => {
   try {
-    const allocations = await Allocation.find();
+    const allocations = await Allocation.find()
+      .populate('eventId', 'name date')
+      .populate('resourceId', 'name category totalQuantity status')
+      // Sort so 'Confirmed' (active) comes before 'Returned', then by newest
+      .sort({ status: 1, createdAt: -1 });
+
     res.json(allocations);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// 2. UPDATE THIS FUNCTION to match the frontend payload
 exports.allocateResource = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    // Changed 'quantity' to 'quantityAllocated' to match frontend
-    const { eventId, resourceId, quantityAllocated } = req.body;
-    const quantity = quantityAllocated || 1;
-    
-    // Check if already allocated to this event
-    const existing = await Allocation.findOne({ eventId, resourceId });
+    const { eventId, resourceId, quantityAllocated = 1 } = req.body;
+
+    if (!eventId || !resourceId) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: 'Event ID and Resource ID are required.' });
+    }
+
+    if (quantityAllocated < 1 || !Number.isInteger(Number(quantityAllocated))) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: 'Quantity must be a positive integer.' });
+    }
+
+    const event = await Event.findById(eventId).session(session);
+    if (!event) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: 'Event not found.' });
+    }
+
+    const resource = await Resource.findById(resourceId).session(session);
+    if (!resource) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: 'Resource not found.' });
+    }
+
+    if (resource.status === 'Maintenance' || resource.status === 'Depleted') {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: `Cannot allocate resource. Status is ${resource.status}.` });
+    }
+
+    const existing = await Allocation.findOne({ eventId, resourceId, status: 'Confirmed' }).session(session);
     if (existing) {
-      return res.status(400).json({ message: "Resource already allocated to this event." });
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: 'Resource is already actively allocated to this event.' });
     }
 
-    // Check availability
-    const resource = await Resource.findById(resourceId);
-    const activeAllocations = await Allocation.find({ resourceId, status: 'Confirmed' });
-    const currentlyUsed = activeAllocations.reduce((acc, curr) => acc + curr.quantityAllocated, 0);
+    const activeAllocations = await Allocation.aggregate([
+      { $match: { resourceId: new mongoose.Types.ObjectId(resourceId), status: 'Confirmed' } },
+      { $group: { _id: null, totalAllocated: { $sum: '$quantityAllocated' } } }
+    ]).session(session);
 
-    if (currentlyUsed + quantity > resource.totalQuantity) {
-      return res.status(400).json({ message: "Insufficient resource quantity available." });
+    const currentlyUsed = activeAllocations.length > 0 ? activeAllocations[0].totalAllocated : 0;
+    const available = resource.totalQuantity - currentlyUsed;
+
+    if (quantityAllocated > available) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ 
+        message: `Insufficient inventory. Only ${Math.max(0, available)} unit(s) available.` 
+      });
     }
 
-    const allocation = new Allocation({ eventId, resourceId, quantityAllocated: quantity });
-    await allocation.save();
-    
+    const allocation = new Allocation({
+      eventId,
+      resourceId,
+      quantityAllocated,
+      status: 'Confirmed'
+    });
+
+    await allocation.save({ session });
+    await session.commitTransaction();
+    session.endSession();
+
+    await allocation.populate('eventId', 'name date');
+    await allocation.populate('resourceId', 'name category totalQuantity');
+
     res.status(201).json(allocation);
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.returnAllocation = async (req, res) => {
+  try {
+    const allocation = await Allocation.findById(req.params.id);
+    
+    if (!allocation) {
+      return res.status(404).json({ message: 'Allocation not found.' });
+    }
+    
+    if (allocation.status === 'Returned') {
+      return res.status(400).json({ message: 'This allocation has already been returned.' });
+    }
+
+    allocation.status = 'Returned';
+    await allocation.save();
+
+    res.json({ message: 'Resource returned successfully.', allocation });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.deleteAllocation = async (req, res) => {
+  try {
+    const allocation = await Allocation.findByIdAndDelete(req.params.id);
+    if (!allocation) {
+      return res.status(404).json({ message: 'Allocation not found.' });
+    }
+    res.json({ message: 'Allocation permanently deleted.' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

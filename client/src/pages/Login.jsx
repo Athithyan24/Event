@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { FiMail, FiLock } from 'react-icons/fi';
 import api from '../lib/axios';
 
 export default function Login() {
+  const location = useLocation();
   const navigate = useNavigate();
   const [credentials, setCredentials] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
@@ -64,10 +65,15 @@ export default function Login() {
                   required
                 />
               </div>
+              {location.state?.message && <p className="text-sm text-green-600">{location.state.message}</p>}
               {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full mt-6 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white border-0">
+              <Button type="submit" className="w-full mt-6 bg-linear-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white border-0">
                 Sign In
               </Button>
+              <p className="text-center text-sm text-gray-500">
+                Need an account?{' '}
+                <Link to="/register" className="font-medium text-primary hover:underline">Register</Link>
+              </p>
             </form>
           </CardContent>
         </Card>
