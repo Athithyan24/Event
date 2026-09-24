@@ -1,83 +1,101 @@
-import { motion } from 'framer-motion';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FiMail, FiLock } from 'react-icons/fi';
-import api from '../lib/axios';
+import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { useForm } from 'react-hook-form';
+import NightScene from '../components/NightScene';
+import { useAuth } from '../store/auth';
 
 export default function Login() {
-  const location = useLocation();
+  const { register, handleSubmit } = useForm({
+    defaultValues: { email: 'admin@aura.edu', password: 'Aura@123' },
+  });
+  const login = useAuth((s) => s.login);
   const navigate = useNavigate();
-  const [credentials, setCredentials] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const onSubmit = async (values) => {
+    setBusy(true);
     setError('');
-
     try {
-      const response = await api.post('/auth/login', credentials);
-      localStorage.setItem('token', response.data.token);
-      navigate('/dashboard', { replace: true });
-    } catch (error) {
-      setError(error.response?.data?.message || 'Unable to sign in.');
+      const user = await login(values.email, values.password);
+      navigate(user.role === 'admin' ? '/app' : '/app');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Could not sign in');
+    } finally {
+      setBusy(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        className="w-full max-w-md"
-      >
-        <Card className="glass-panel border-0 shadow-2xl">
-          <CardHeader className="space-y-1 text-center pt-8">
-            <CardTitle className="text-3xl font-bold tracking-tight">Welcome back</CardTitle>
-            <CardDescription className="text-gray-500">
-              Enter your credentials to access the portal
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pb-8">
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2 relative">
-                <FiMail className="absolute left-3 top-3 text-gray-400" />
-                <Input 
-                  type="email" 
-                  placeholder="name@college.edu" 
-                  className="pl-10 bg-white/50 dark:bg-black/20"
-                  value={credentials.email}
-                  onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
-                  required
+    <div className="relative min-h-screen overflow-hidden bg-[#f7f4ff]">
+      <p className="pointer-events-none absolute left-10 top-8 hidden text-3xl font-light text-[#c4c0d4] md:block">
+        Welcome to
+        <br />
+        <span className="font-semibold">Aura</span>
+      </p>
+      <p className="pointer-events-none absolute bottom-8 left-10 hidden text-sm text-[#b9b4c9] md:block">
+        Don’t have an account? <span className="text-[#7b3fe4]">Sign up</span>
+      </p>
+
+      <div className="relative mx-auto flex min-h-screen max-w-6xl items-center px-4 py-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative grid w-full overflow-hidden rounded-[32px] bg-white shadow-[0_40px_80px_-40px_rgba(76,29,149,0.45)] md:grid-cols-[0.9fr_1.1fr]"
+        >
+          <div className="relative z-10 flex flex-col justify-center px-8 py-14 sm:px-14">
+            <span className="mb-8 inline-block h-4 w-4 rounded-full bg-[#f0b429]" />
+            <h1 className="text-3xl font-semibold tracking-tight text-[#1a1340]">
+              Welcome to
+              <br />
+              <span className="text-[40px] leading-none">Aura</span>
+            </h1>
+            <form onSubmit={handleSubmit(onSubmit)} className="mt-10 max-w-sm space-y-6">
+              <label className="block">
+                <span className="text-xs text-black/45">Email</span>
+                <input
+                  className="mt-1 w-full border-0 border-b border-black/15 bg-transparent py-2 text-sm outline-none focus:border-[#7b3fe4]"
+                  {...register('email', { required: true })}
                 />
-              </div>
-              <div className="space-y-2 relative">
-                <FiLock className="absolute left-3 top-3 text-gray-400" />
-                <Input 
-                  type="password" 
-                  placeholder="••••••••" 
-                  className="pl-10 bg-white/50 dark:bg-black/20"
-                  value={credentials.password}
-                  onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
-                  required
+              </label>
+              <label className="block">
+                <span className="text-xs text-black/45">Password</span>
+                <input
+                  type="password"
+                  className="mt-1 w-full border-0 border-b border-black/15 bg-transparent py-2 text-sm tracking-[0.35em] outline-none focus:border-[#7b3fe4]"
+                  {...register('password', { required: true })}
                 />
-              </div>
-              {location.state?.message && <p className="text-sm text-green-600">{location.state.message}</p>}
-              {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full mt-6 bg-linear-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white border-0">
-                Sign In
-              </Button>
-              <p className="text-center text-sm text-gray-500">
-                Need an account?{' '}
-                <Link to="/register" className="font-medium text-primary hover:underline">Register</Link>
-              </p>
+              </label>
+              {error && <p className="text-sm text-rose-600">{error}</p>}
+              <button
+                disabled={busy}
+                className="rounded-full bg-[#7b3fe4] px-10 py-2.5 text-sm font-medium text-white shadow-[0_10px_24px_-8px_rgba(123,63,228,0.8)] transition hover:bg-[#6d28d9] disabled:opacity-60"
+              >
+                {busy ? 'Please wait' : 'LOGIN'}
+              </button>
             </form>
-          </CardContent>
-        </Card>
-      </motion.div>
+            <p className="mt-8 text-sm text-black/45">
+              Don’t have an account?{' '}
+              <Link to="/register" className="text-[#7b3fe4]">
+                Sign up
+              </Link>
+            </p>
+            <p className="mt-6 text-[11px] leading-relaxed text-black/35">
+              Demo · Admin <b>admin@aura.edu</b> · Department <b>cse@aura.edu</b> · password <b>Aura@123</b>
+            </p>
+          </div>
+
+          <div className="relative hidden min-h-[560px] md:block">
+            <div className="absolute inset-0">
+              <NightScene />
+            </div>
+            <svg className="absolute inset-y-0 left-0 h-full w-40" viewBox="0 0 160 720" preserveAspectRatio="none">
+              <path d="M160 0 C80 160 20 280 40 420 C60 560 120 640 160 720 L0 720 L0 0Z" fill="white" />
+            </svg>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 }

@@ -1,96 +1,36 @@
-import { motion } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FiLock, FiMail, FiUser } from 'react-icons/fi';
-import api from '../lib/axios';
+import { Link } from 'react-router-dom';
+import NightScene from '../components/NightScene';
 
 export default function Register() {
-  const navigate = useNavigate();
-  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
-  const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setError('');
-    setIsSubmitting(true);
-
-    try {
-      await api.post('/auth/register', formData);
-      navigate('/login', { replace: true, state: { message: 'Account created. Please sign in.' } });
-    } catch (error) {
-      setError(error.response?.data?.message || 'Unable to create account.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-        className="w-full max-w-md"
-      >
-        <Card className="glass-panel border-0 shadow-2xl">
-          <CardHeader className="space-y-1 text-center pt-8">
-            <CardTitle className="text-3xl font-bold tracking-tight">Create account</CardTitle>
-            <CardDescription className="text-gray-500">
-              Register as a campus event coordinator
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pb-8">
-            <form onSubmit={handleRegister} className="space-y-4">
-              <div className="relative">
-                <FiUser className="absolute left-3 top-3 text-gray-400" />
-                <Input
-                  type="text"
-                  placeholder="Full name"
-                  className="pl-10 bg-white/50 dark:bg-black/20"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="relative">
-                <FiMail className="absolute left-3 top-3 text-gray-400" />
-                <Input
-                  type="email"
-                  placeholder="name@college.edu"
-                  className="pl-10 bg-white/50 dark:bg-black/20"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="relative">
-                <FiLock className="absolute left-3 top-3 text-gray-400" />
-                <Input
-                  type="password"
-                  placeholder="Create a password"
-                  className="pl-10 bg-white/50 dark:bg-black/20"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  minLength={6}
-                  required
-                />
-              </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" disabled={isSubmitting} className="w-full mt-6 bg-linear-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white border-0">
-                {isSubmitting ? 'Creating account...' : 'Create Account'}
-              </Button>
-              <p className="text-center text-sm text-gray-500">
-                Already have an account?{' '}
-                <Link to="/login" className="font-medium text-primary hover:underline">Sign in</Link>
-              </p>
-            </form>
-          </CardContent>
-        </Card>
-      </motion.div>
+    <div className="relative min-h-screen overflow-hidden bg-[#f7f4ff]">
+      <div className="relative mx-auto flex min-h-screen max-w-6xl items-center px-4 py-10">
+        <div className="relative grid w-full overflow-hidden rounded-[32px] bg-white shadow-[0_40px_80px_-40px_rgba(76,29,149,0.45)] md:grid-cols-[0.9fr_1.1fr]">
+          <div className="relative z-10 flex flex-col justify-center px-8 py-14 sm:px-14">
+            <span className="mb-8 inline-block h-4 w-4 rounded-full bg-[#f0b429]" />
+            <h1 className="text-3xl font-semibold tracking-tight text-[#1a1340]">
+              Join
+              <br />
+              <span className="text-[40px] leading-none">Aura</span>
+            </h1>
+            <p className="mt-6 max-w-sm text-sm leading-relaxed text-black/55">
+              Accounts are issued by campus administration. Ask your department coordinator, or sign in with a demo profile to explore the studio.
+            </p>
+            <Link
+              to="/login"
+              className="mt-10 inline-flex w-fit rounded-full bg-[#7b3fe4] px-10 py-2.5 text-sm font-medium text-white"
+            >
+              Back to LOGIN
+            </Link>
+          </div>
+          <div className="relative hidden min-h-[520px] md:block">
+            <NightScene />
+            <svg className="absolute inset-y-0 left-0 h-full w-40" viewBox="0 0 160 720" preserveAspectRatio="none">
+              <path d="M160 0 C80 160 20 280 40 420 C60 560 120 640 160 720 L0 720 L0 0Z" fill="white" />
+            </svg>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

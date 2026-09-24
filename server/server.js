@@ -1,56 +1,39 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const bcrypt = require('bcrypt'); // Ensure bcrypt is installed (npm install bcrypt)
-const User = require('./models/User'); // Adjust path to your User.js if necessary
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+const { errorHandler } = require('./middleware/error');
+const { ensureAdmin } = require('./utils/ensureAdmin');
 
 const app = express();
+app.use(cors({ origin: process.env.CLIENT_URL || true, credentials: true }));
+app.use(express.json({ limit: '2mb' }));
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+app.get('/api/health', (req, res) => res.json({ ok: true, name: 'Aura Events API' }));
 
-// Routes Placeholder Imports
-const authRoutes = require('./routes/authRoutes');
-const eventRoutes = require('./routes/eventRoutes');
-const allocationRoutes = require('./routes/allocationRoutes');
-const resourceRoutes = require('./routes/resourceRoutes');
-const dashboardRoutes = require('./routes/dashboardRoutes');
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/departments', require('./routes/departmentRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/venues', require('./routes/venueRoutes'));
+app.use('/api/equipment', require('./routes/equipmentRoutes'));
+app.use('/api/events', require('./routes/eventRoutes'));
+app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 
-// API Endpoint Setup
-app.use('/api/auth', authRoutes);
-app.use('/api/events', eventRoutes);
-app.use('/api/allocations', allocationRoutes);
-app.use('/api/resources', resourceRoutes);
-app.use('/api/dashboard', dashboardRoutes);
+app.use(errorHandler);
 
-// MongoDB Connection
 const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/smart_planner';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/aura_events';
 
-mongoose.connect(MONGO_URI)
+mongoose
+  .connect(MONGO_URI)
   .then(async () => {
-    console.log('MongoDB connected successfully');
-    
-    // --- Default Admin Seeding Logic ---
-    try {
-      const adminExists = await User.findOne({ email: 'admin@college.edu' });
-      if (!adminExists) {
-        const hashedPassword = await bcrypt.hash('admin123', 10);
-        await User.create({
-          name: 'System Admin',
-          email: 'admin@college.edu',
-          password: hashedPassword,
-          role: 'Admin'
-        });
-        console.log('Default Admin user created: admin@college.edu / admin123');
-      }
-    } catch (seedErr) {
-      console.error('Error seeding admin user:', seedErr);
-    }
-    // -----------------------------------
-
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    console.log('MongoDB connected');
+    await ensureAdmin();
+    app.listen(PORT, () => console.log(`Aura API running on ${PORT}`));
   })
-  .catch((err) => console.error('MongoDB connection error:', err));
+  .catch((err) => {
+    console.error('MongoDB connection failed', err);
+    process.exit(1);
+  });
