@@ -106,7 +106,8 @@ export default function Login() {
                 <p className="text-[9px] font-medium uppercase tracking-[0.14em] text-[#9991aa]">
                   Guided by
                 </p>
-                <p className="mt-1 text-sm font-medium text-[#342b50]">Athithyan A</p>
+                <p className="mt-1 text-sm font-bold text-[#342b50]">Dr. G. P. Suja</p>
+                <p className="mt-1 text-sm font-medium text-[#342b50]">Assistant Professor PG & Research</p>
                 <p className="mt-1 text-xs text-[#6f6981]">
                   Muslim Arts College, Thiruvidhangode
                 </p>
