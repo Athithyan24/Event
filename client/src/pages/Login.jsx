@@ -38,24 +38,27 @@ export default function Login() {
         Don’t have an account? <span className="text-[#7b3fe4]">Sign up</span>
       </p>
 
-      <div className="relative mx-auto flex min-h-screen max-w-6xl items-center px-4 py-10">
+      <div className="relative mx-auto flex min-h-screen max-w-6xl items-center px-4 py-5 sm:py-7">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="relative grid w-full overflow-hidden rounded-[32px] bg-white shadow-[0_40px_80px_-40px_rgba(76,29,149,0.45)] md:grid-cols-[0.9fr_1.1fr]"
         >
-          <div className="relative z-10 flex flex-col justify-center px-8 py-14 sm:px-14">
-            <span className="mb-8 inline-block h-4 w-4 rounded-full bg-[#f0b429]" />
-            <h1 className="text-3xl font-semibold tracking-tight text-[#1a1340]">
+          <div className="relative z-10 flex flex-col justify-center px-7 py-7 sm:px-12 sm:py-8">
+            <span className="mb-3 inline-block h-3 w-3 rounded-full bg-[#f0b429]" />
+            <h1 className="text-2xl font-semibold tracking-tight text-[#1a1340]">
               Welcome to
               <br />
-              <span className="text-[40px] leading-none">Aura</span>
+              <span className="text-[30px] leading-none">Aura</span>
             </h1>
-            <form onSubmit={handleSubmit(onSubmit)} className="mt-10 max-w-sm space-y-6">
+            <p className="serif mt-2 max-w-sm text-2xl font-medium leading-snug text-[#6f027e]">
+              Smart Event Planning and Resource Allocation Management System
+            </p>
+            <form onSubmit={handleSubmit(onSubmit)} className="mt-5 max-w-sm space-y-3">
               <label className="block">
                 <span className="text-xs text-black/45">Email</span>
                 <input
-                  className="mt-1 w-full border-0 border-b border-black/15 bg-transparent py-2 text-sm outline-none focus:border-[#7b3fe4]"
+                  className="mt-1 w-full border-0 border-b border-black/15 bg-transparent py-1.5 text-sm outline-none focus:border-[#7b3fe4]"
                   {...register('email', { required: true })}
                 />
               </label>
@@ -63,7 +66,7 @@ export default function Login() {
                 <span className="text-xs text-black/45">Password</span>
                 <input
                   type="password"
-                  className="mt-1 w-full border-0 border-b border-black/15 bg-transparent py-2 text-sm tracking-[0.35em] outline-none focus:border-[#7b3fe4]"
+                  className="mt-1 w-full border-0 border-b border-black/15 bg-transparent py-1.5 text-sm tracking-[0.35em] outline-none focus:border-[#7b3fe4]"
                   {...register('password', { required: true })}
                 />
               </label>
@@ -75,15 +78,40 @@ export default function Login() {
                 {busy ? 'Please wait' : 'LOGIN'}
               </button>
             </form>
-            <p className="mt-8 text-sm text-black/45">
+            <p className="mt-4 text-sm text-black/45">
               Don’t have an account?{' '}
               <Link to="/register" className="text-[#7b3fe4]">
                 Sign up
               </Link>
             </p>
-            <p className="mt-6 text-[11px] leading-relaxed text-black/35">
+            <p className="mt-3 text-[10px] leading-relaxed text-black/35">
               Demo · Admin <b>admin@aura.edu</b> · Department <b>cse@aura.edu</b> · password <b>Aura@123</b>
             </p>
+            <section
+              aria-label="Student project details"
+              className="mt-4 max-w-sm rounded-2xl border border-[#e9e3f4] bg-[#faf8ff] p-3 shadow-[0_12px_28px_-24px_rgba(76,29,149,0.6)]"
+            >
+              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7b3fe4]">
+                Project presented by
+              </p>
+              <h2 className="mt-1 text-lg font-semibold tracking-tight text-[#1a1340]">
+                Christina Baus S<span className="text-[#b4adc2]">·</span> 2025-2027
+              </h2>
+              <p className="mt-1 text-xs leading-relaxed text-[#6f6981]">
+                M.Sc. Computer Science <span className="text-[#b4adc2]">·</span> II<sup>nd</sup> Year
+                <br />
+                Department of Computer Science
+              </p>
+              <div className="mt-2 border-t border-[#e9e3f4] pt-2">
+                <p className="text-[9px] font-medium uppercase tracking-[0.14em] text-[#9991aa]">
+                  Guided by
+                </p>
+                <p className="mt-1 text-sm font-medium text-[#342b50]">Athithyan A</p>
+                <p className="mt-1 text-xs text-[#6f6981]">
+                  Muslim Arts College, Thiruvidhangode
+                </p>
+              </div>
+            </section>
           </div>
 
           <div className="relative hidden min-h-[560px] md:block">

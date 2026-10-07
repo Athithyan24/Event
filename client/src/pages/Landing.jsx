@@ -6,10 +6,10 @@ import { FadeUp, HoverLift } from '../components/Motion';
 const photos = [
   'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=600&q=80',
   'https://images.unsplash.com/photo-1464375117522-1311d6a5b81f?auto=format&fit=crop&w=400&q=80',
-  'https://images.unsplash.com/photo-1523580494863-6f3031224f54?auto=format&fit=crop&w=400&q=80',
+  'https://images.unsplash.com/photo-1586765429758-ec88f3425101?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
   'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=400&q=80',
   'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=400&q=80',
-  'https://images.unsplash.com/photo-1506157786151-b8491531f357?auto=format&fit=crop&w=400&q=80',
+  'https://images.unsplash.com/photo-1741681001349-3e6782963522?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
   'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=400&q=80',
   'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=400&q=80',
 ];
@@ -43,10 +43,15 @@ export default function Landing() {
       <section className="mx-auto max-w-6xl px-6 pb-6 pt-8 text-center">
         <FadeUp>
           <h1 className="serif text-[56px] leading-[0.9] tracking-tight sm:text-[88px] md:text-[108px]">
-            AWESOME
+            Welcome to
             <br />
-            EVENTS!
+            Aura
           </h1>
+        </FadeUp>
+        <FadeUp delay={0.04} className="mx-auto mt-5 max-w-2xl px-4">
+          <p className="serif text-3xl leading-none text-fuchsia-900 sm:text-4xl md:text-5xl">
+            Smart Event Planning and Resource Allocation Management System
+          </p>
         </FadeUp>
         <FadeUp delay={0.08} className="mt-6 flex items-center justify-center gap-3">
           <span className="rounded-full bg-[#171411] px-3 py-1 text-[11px] text-white">Featured</span>
@@ -54,7 +59,7 @@ export default function Landing() {
             <img alt="" src={photos[3]} className="h-full w-full object-cover" />
           </span>
           <p className="max-w-[160px] text-left text-[11px] leading-tight text-black/55">
-            From seminar halls to open lawns — we allocate every seat and speaker.
+            From Christina Baus S, II<sup>nd</sup> Msc — Dept. of Computer Science
           </p>
         </FadeUp>
       </section>
